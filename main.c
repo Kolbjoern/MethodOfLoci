@@ -1,48 +1,12 @@
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
 
-struct Pair
+void append(char *str, char c)
 {
-	char first[25];
-	char second[25];
-};
-
-struct Pair createPair(char first[], char second[])
-{
-	struct Pair newPair;
-	strcpy(newPair.first, first);
-	strcpy(newPair.second, second);
-	return newPair;
-}
-
-void populateList(struct Pair * list,  char filePath[])
-{
-	FILE *file;
-	file = fopen(filePath, "r");
-
-	int i = 0;
-	char buffer[25];
-	while (fgets(buffer, 25, file))
-	{
-		char test[25];
-		memset(test, 0, 25);
-		strncpy(test, buffer, strlen(buffer)-1);
-
-		char *token;
-		token = strtok(buffer, ":");
-		list[i] = createPair(token, strtok(NULL, "\n"));
-		i++;
-	}
-
-	fclose(file);
-}
-
-void printList(struct Pair * list, int size)
-{
-	for (int i = 0; i < size; i++)
-	{
-		printf("%s -> %s\n", list[i].first, list[i].second);
-	}
+	int len = strlen(str);
+	str[len] = c;
+	str[len+1] = '\0';
 }
 
 int main (int argc, char *argv[])
@@ -53,9 +17,55 @@ int main (int argc, char *argv[])
 		return 0;
 	}
 
-	struct Pair lociList[52];
+	FILE *file = NULL;
+	char *filename = argv[1];
+	file = fopen(filename, "r");
+	if (file == NULL)
+	{
+		printf("could not open file %s for reading\n", filename);
+		return 0;
+	}
 
-	populateList(lociList, argv[1]);
+	int numLines = 0;
+
+	char currChar;
+	for (currChar = getc(file); currChar != EOF; currChar = getc(file))
+	{
+		if (currChar == '\n')
+			numLines++;
+	}
+
+	rewind(file);
+
+	char *first[numLines];
+	char *second[numLines];
+
+	int i = 0;
+	int j = 0;
+	char buffer[255];
+	for (currChar = getc(file); currChar != EOF; currChar = getc(file))
+	{
+		if (currChar == ':')
+		{
+			first[i] = malloc(sizeof(buffer));
+			strcpy(first[i++], buffer);
+			buffer[0] = '\0';
+		}
+		else if (currChar == '\n')
+		{
+			second[j] = malloc(sizeof(buffer));
+			strcpy(second[j++], buffer);
+			buffer[0] = '\0';
+		}
+		else
+		{
+			int length = strlen(buffer);
+			buffer[length] = currChar;
+			buffer[length+1] = '\0';
+		}
+	}
+
+	fclose(file);
 
 	int exit = 0;
 	int c;
@@ -73,11 +83,22 @@ int main (int argc, char *argv[])
 		getchar();
 
 		if (c == '1')
-			printList(lociList, sizeof(lociList)/sizeof(lociList[0]));
+		{
+			for (int j = 0; j < sizeof(first)/sizeof(first[0]); j++)
+			{
+				printf("%s -> %s\n", first[j], second[j]);
+			}
+		}
 
 		if (c == '9')
 			exit = 1;
 	}
-	
+
+	for (int k = 0; k < numLines; k++)
+	{
+		free(first[i]);
+		free(second[i]);
+	}
+
 	return 0;
 }
